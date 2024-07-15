@@ -90,16 +90,16 @@ class CandlCosmoSISLikelihood:
 
         
         # Read in Cls from CosmoSIS and save them in dict.
-        # CosmoSIS outputs CAMB Cls in unit of l(l+1)/(2pi) even for pp
-        # This matches candl expectations for primary CMB - will have to run this and check for lensing
+        # CosmoSIS outputs CAMB Cls in unit of l(l+1)/(2pi)
+        # For pp it's ell * (ell + 1) / (2 * np.pi) - i.e. missing the customary extra ell * (ell + 1) wrt eg the CAMB standard
+        # This matches candl expectations for primary CMB - but we need to convert this for lensing
         ell = block[names.cmb_cl, 'ell']
-        f1 = ell * (ell + 1) / (2 * np.pi)
         cl_tt = block[names.cmb_cl, 'tt']
         cl_ee = block[names.cmb_cl, 'ee']
         cl_te = block[names.cmb_cl, 'te']
         cl_bb = block[names.cmb_cl, 'bb']
-        cl_pp = block[names.cmb_cl, 'pp']
-        cl_kk = cl_pp * (ell*(ell+1.))**2. / 4. # ehhh isn't there a factor of pi here?
+        cl_pp = block[names.cmb_cl, 'pp'] * ell * (ell + 1)
+        cl_kk = cl_pp * np.pi / 2.0
 
         # Figure out ell range of supplied spectra w.r.t. the expectation of the likelihood
         N_ell = self.candl_like.ell_max - self.candl_like.ell_min + 1
