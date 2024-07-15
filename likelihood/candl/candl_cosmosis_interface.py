@@ -34,7 +34,8 @@ class CandlCosmoSISLikelihood:
         # Read in other options from ini
         # Further options for fancy data model selection to come...
         self.lensing = options.get_bool('lensing', default=True)
-        self.clear_internal_priors = options.get_bool('clear_internal_priors', default=True)
+        self.clear_1d_internal_priors = options.get_bool('clear_1d_internal_priors', default=True)
+        self.force_clear_nd_internal_priors = options.get_bool('force_clear_nd_internal_priors', default=False)# CosmoSIS only has 1d priors implemented
         self.feedback = options.get_bool('feedback', default=True)
 
         # Optional data selection
@@ -61,8 +62,15 @@ class CandlCosmoSISLikelihood:
             raise Exception("candl: likelihood could not be initialised!")
 
         # by default clear internal priors and assume these are taken care off by CosmoSIS
-        if self.clear_internal_priors:
-            self.candl_like.priors = [] 
+        if self.clear_1d_internal_priors:
+            if self.force_clear_nd_internal_priors:
+                keep_prior_ix = []
+                for i, prior in enumerate(self.candl_like.priors):
+                    if prior.prior_covariance.shape[0] > 1:
+                        keep_prior_ix.append(i)
+                self.candl_like.priors = [self.candl_like.priors[i] for i in keep_prior_ix]
+            else:
+                self.candl_like.priors = [] 
 
     def reformat(self,block):
         """
@@ -83,11 +91,13 @@ class CandlCosmoSISLikelihood:
         nuisance_par_names      = [param_name for param_sec, param_name in block.keys() if param_sec == 'nuisance_parameters']
 
         # Match any nuisance parameters in candl and restore right cases
-        for i, par in enumerate([p.lower() for p in self.candl_like.required_nuisance_parameters]):
-            if par in nuisance_par_names:
-                nuisance_par_names[i] = self.candl_like.required_nuisance_parameters[i]
-        model_dict = {par: block[('nuisance_parameters',par)] for par in nuisance_par_names}# CosmoSIS doesn't care about cases, so putting them in is easy
+        like_nuisance_pars_lowered = [p.lower() for p in self.candl_like.required_nuisance_parameters]
+        for i, par in enumerate(nuisance_par_names):
+            if par in like_nuisance_pars_lowered:
+                nuisance_par_names[i] = self.candl_like.required_nuisance_parameters[like_nuisance_pars_lowered.index(par)]
 
+        for par in nuisance_par_names:
+            model_dict[par] = block[('nuisance_parameters',par)]# CosmoSIS doesn't care about cases, so putting them in is easy
         
         # Read in Cls from CosmoSIS and save them in dict.
         # CosmoSIS outputs CAMB Cls in unit of l(l+1)/(2pi)
@@ -133,7 +143,7 @@ class CandlCosmoSISLikelihood:
                 np.arange(like_start_ix, like_stop_ix),
                 spec[theory_start_ix:theory_stop_ix],
             )
-        
+
         return model_dict
     
 
