@@ -6,7 +6,6 @@ except ImportError:
     raise RuntimeError('Can not find candl. Try running: pip install candl-like')
 
 from cosmosis.datablock import names, SectionOptions
-#cosmosis_names = names
 import numpy as np
 import os
 
@@ -143,7 +142,7 @@ class CandlCosmoSISLikelihood:
                 np.arange(like_start_ix, like_stop_ix),
                 spec[theory_start_ix:theory_stop_ix],
             )
-
+        
         return model_dict
     
 
