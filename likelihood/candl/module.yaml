@@ -36,7 +36,7 @@ params:
         meaning: "Delete all 1d Gaussian priors implemented in candl."
         type: bool
         default: True
-    force_clear_nd_internal_priors:
+    clear_nd_internal_priors:
         meaning: "Delete all >1d Gaussian priors implemented in candl. Beware: CosmoSIS does not have support for higher-dimensional Gaussian priors."
         type: bool
         default: False

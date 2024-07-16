@@ -34,7 +34,7 @@ class CandlCosmoSISLikelihood:
         # Further options for fancy data model selection to come...
         self.lensing = options.get_bool('lensing', default=True)
         self.clear_1d_internal_priors = options.get_bool('clear_1d_internal_priors', default=True)
-        self.force_clear_nd_internal_priors = options.get_bool('force_clear_nd_internal_priors', default=False)# CosmoSIS only has 1d priors implemented
+        self.clear_nd_internal_priors = options.get_bool('clear_nd_internal_priors', default=False)# CosmoSIS only has 1d priors implemented
         self.feedback = options.get_bool('feedback', default=True)
 
         # Optional data selection
@@ -60,16 +60,15 @@ class CandlCosmoSISLikelihood:
         except:
             raise Exception("candl: likelihood could not be initialised!")
 
-        # by default clear internal priors and assume these are taken care off by CosmoSIS
-        if self.clear_1d_internal_priors:
-            if self.force_clear_nd_internal_priors:
-                keep_prior_ix = []
-                for i, prior in enumerate(self.candl_like.priors):
-                    if prior.prior_covariance.shape[0] > 1:
-                        keep_prior_ix.append(i)
-                self.candl_like.priors = [self.candl_like.priors[i] for i in keep_prior_ix]
-            else:
-                self.candl_like.priors = [] 
+        # By default clear internal priors and assume these are taken care off by CosmoSIS
+        keep_prior_ix = []
+        for i, prior in enumerate(self.candl_like.priors):
+            if prior.prior_covariance.shape[0] == 1 and not self.clear_1d_internal_priors:
+                keep_prior_ix.append(i)
+            elif prior.prior_covariance.shape[0] > 1 and not self.clear_nd_internal_priors:
+                keep_prior_ix.append(i)
+        self.candl_like.priors = [self.candl_like.priors[i] for i in keep_prior_ix]
+
 
     def reformat(self,block):
         """
@@ -142,7 +141,7 @@ class CandlCosmoSISLikelihood:
                 np.arange(like_start_ix, like_stop_ix),
                 spec[theory_start_ix:theory_stop_ix],
             )
-        
+
         return model_dict
     
 
